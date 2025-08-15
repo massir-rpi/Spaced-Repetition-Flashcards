@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }));
 app.use(bodyParser.json());
@@ -329,7 +329,8 @@ app.post('/api/review/:id', requireAuth, (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Flashcards API listening on http://localhost:${PORT}`);
+  const host = process.env.HOST || 'http://localhost';
+  console.log(`Flashcards API listening on ${host}:${PORT}`);
 });
 
 

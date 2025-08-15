@@ -69,6 +69,22 @@ npm start
 
 The backend server will start on `http://localhost:3001`
 
+#### Environment Variables
+
+The backend can be configured using environment variables:
+
+- `PORT` - Server port (default: `3001`)
+- `HOST` - Server hostname for console output (default: `localhost`)
+- `FRONTEND_URL` - Frontend URL for CORS (default: `http://localhost:5173`)
+
+Create a `.env` file in the backend directory to override defaults:
+```bash
+# backend/.env
+PORT=3001
+HOST=http://your-server-hostname
+FRONTEND_URL=http://your-frontend-address:4173
+```
+
 ### Frontend Setup
 
 ```bash
@@ -77,7 +93,7 @@ npm install
 npm run dev
 ```
 
-This will build the frontend for production and serve it on `http://localhost:4173`
+This will build the frontend for production and serve it on `http://localhost:5173`
 
 #### Environment Variables
 
