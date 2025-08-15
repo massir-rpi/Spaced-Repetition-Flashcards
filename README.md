@@ -77,7 +77,20 @@ npm install
 npm run dev
 ```
 
-The frontend development server will start on `http://localhost:5173`
+This will build the frontend for production and serve it on `http://localhost:4173`
+
+#### Environment Variables
+
+The frontend can be configured using environment variables:
+
+- `BACKEND_API_URL` - Backend API URL (default: `http://localhost:3001`)
+
+Create a `.env` file in the frontend directory to override defaults:
+
+```bash
+# frontend/.env
+BACKEND_API_URL=http://your-backend-server:3001
+```
 
 ## Project Structure
 

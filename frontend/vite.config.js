@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     proxy: {
-      '/api': 'http://localhost:3001'
+      '/api': process.env.BACKEND_API_URL || 'http://localhost:3001'
     }
   }
 })
