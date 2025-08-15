@@ -1,0 +1,22 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Node
+node_modules/
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# SQLite database and journals
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*-journal
+*-wal
+*-shm
