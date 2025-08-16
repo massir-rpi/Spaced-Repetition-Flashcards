@@ -13,7 +13,6 @@ onMounted(() => {
 async function handleLogout() {
   await logout(); // Logout user
   router.push('/login'); // Redirect to login page
-  router.go(); // Refresh page
 }
 </script>
 
