@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
+import { apiUrl, API_ENDPOINTS } from '../utils/api.js';
 
 const loading = ref(false);
 const currentCard = ref(null);
@@ -10,7 +11,7 @@ async function loadNext() {
   loading.value = true;
   showDefinition.value = false;
   try {
-    const res = await fetch('/api/next', {
+    const res = await fetch(apiUrl(API_ENDPOINTS.NEXT_CARD), {
       credentials: 'include'
     });
     const data = await res.json();
@@ -27,7 +28,7 @@ async function submitAnswer(result) {
   if (!currentCard.value) return;
   loading.value = true;
   try {
-    await fetch(`/api/review/${currentCard.value.id}`, {
+    await fetch(apiUrl(API_ENDPOINTS.REVIEW_CARD(currentCard.value.id)), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

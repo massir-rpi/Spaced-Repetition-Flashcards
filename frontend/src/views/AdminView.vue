@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
+import { apiUrl, API_ENDPOINTS } from '../utils/api.js';
 import EditText from '../component/EditText.vue';
 
 const term = ref('');
@@ -8,7 +9,7 @@ const cards = ref([]);
 const loading = ref(false);
 
 async function fetchCards() {
-  const res = await fetch('/api/cards', {
+  const res = await fetch(apiUrl(API_ENDPOINTS.CARDS), {
     credentials: 'include'
   });
   cards.value = await res.json();
@@ -18,7 +19,7 @@ async function createCard() {
   if (!term.value.trim() || !definition.value.trim()) return;
   loading.value = true;
   try {
-    await fetch('/api/cards', {
+    await fetch(apiUrl(API_ENDPOINTS.CARDS), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -36,7 +37,7 @@ async function deleteCard(id) {
   if (!id) return;
   loading.value = true;
   try {
-    await fetch(`/api/cards/${id}`, {
+    await fetch(apiUrl(API_ENDPOINTS.DELETE_CARD(id)), {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'

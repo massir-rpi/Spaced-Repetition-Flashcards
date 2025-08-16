@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue';
+import { apiUrl, API_ENDPOINTS } from '../utils/api.js';
 
 const user = ref(null);
 const loading = ref(false);
@@ -9,7 +10,7 @@ export function useAuth() {
   async function checkAuth() {
     loading.value = true;
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch(apiUrl(API_ENDPOINTS.CHECK_AUTH), {
         credentials: 'include'
       });
       if (response.ok) {
@@ -29,7 +30,7 @@ export function useAuth() {
   async function login(username, password) {
     loading.value = true;
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(apiUrl(API_ENDPOINTS.LOGIN), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -54,7 +55,7 @@ export function useAuth() {
   async function signup(username, password) {
     loading.value = true;
     try {
-      const response = await fetch('/api/auth/signup', {
+      const response = await fetch(apiUrl(API_ENDPOINTS.SIGNUP), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -79,7 +80,7 @@ export function useAuth() {
   async function logout() {
     loading.value = true;
     try {
-      await fetch('/api/auth/logout', {
+      await fetch(apiUrl(API_ENDPOINTS.LOGOUT), {
         method: 'POST',
         credentials: 'include'
       });

@@ -78,6 +78,7 @@ The backend can be configured using environment variables:
 - `FRONTEND_URL` - Frontend URL for CORS (default: `http://localhost:5173`)
 
 Create a `.env` file in the backend directory to override defaults:
+
 ```bash
 # backend/.env
 PORT=3001
@@ -99,13 +100,18 @@ This will build the frontend for production and serve it on `http://localhost:51
 
 The frontend can be configured using environment variables:
 
-- `BACKEND_API_URL` - Backend API URL (default: `http://localhost:3001`)
+- `BACKEND_API_URL` - Backend API URL for Vite proxy (default: `http://localhost:3001`)
+- `API_BASE_URL` - Full API base URL for production deployment (no default)
 
 Create a `.env` file in the frontend directory to override defaults:
 
 ```bash
 # frontend/.env
-BACKEND_API_URL=http://your-backend-server:3001
+# For development (Vite proxy)
+BACKEND_API_URL=http://localhost:3001
+
+# For production deployment (full URL)
+API_BASE_URL=https://your-backend.onrender.com
 ```
 
 ## Project Structure
