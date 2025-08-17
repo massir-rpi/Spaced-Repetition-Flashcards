@@ -96,7 +96,6 @@ onMounted(() => {
       <table>
         <thead>
           <tr>
-            <th>ID</th>
             <th>Term</th>
             <th>Definition</th>
             <th>Bin</th>
@@ -108,7 +107,6 @@ onMounted(() => {
         </thead>
         <tbody>
           <tr v-for="c in cards" :key="c.id">
-            <td>{{ c.id }}</td>
             <td>
               <edit-text 
                 v-model="c.term" 
