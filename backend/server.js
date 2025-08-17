@@ -16,15 +16,22 @@ app.use(cors({
   optionsSuccessStatus: 200 // Safari compatibility
 }));
 app.use(bodyParser.json());
+
+console.log('=== SESSION CONFIG DEBUG ===');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('============================');
+
 app.use(session({
-  secret: 'flashcard-secret-key-change-in-production',
+  secret: process.env.SESSION_SECRET || 'flashcard-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
   cookie: { 
-    secure: process.env.NODE_ENV === 'production' || process.env.HTTPS === 'true',
+    secure: true,
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    sameSite: 'none',
+    path: '/'
   }
 }));
 
@@ -150,6 +157,12 @@ app.post('/api/auth/login', async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
     
+    console.log('=== LOGIN SUCCESS DEBUG ===');
+    console.log('Session ID:', req.sessionID);
+    console.log('Session data:', req.session);
+    console.log('Set-Cookie header will be:', res.getHeaders()['set-cookie']);
+    console.log('===========================');
+    
     res.json({ 
       user: { 
         id: user.id, 
@@ -174,6 +187,13 @@ app.post('/api/auth/logout', (req, res) => {
 
 // Get current user
 app.get('/api/auth/me', (req, res) => {
+  console.log('=== AUTH CHECK DEBUG ===');
+  console.log('Headers:', req.headers);
+  console.log('Session ID:', req.sessionID);
+  console.log('Session data:', req.session);
+  console.log('Cookie header:', req.headers.cookie);
+  console.log('========================');
+  
   if (!req.session.userId) {
     return res.status(401).json({ error: 'Not authenticated' });
   }

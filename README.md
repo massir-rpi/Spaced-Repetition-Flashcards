@@ -76,6 +76,7 @@ The backend can be configured using environment variables:
 - `PORT` - Server port (default: `3001`)
 - `HOST` - Server hostname for console output (default: `localhost`)
 - `FRONTEND_URL` - Frontend URL for CORS (default: `http://localhost:5173`)
+- `SESSION_SECRET` - Private key to decrypt client requests
 
 Create a `.env` file in the backend directory to override defaults:
 
@@ -84,6 +85,7 @@ Create a `.env` file in the backend directory to override defaults:
 PORT=3001
 HOST=http://your-server-hostname
 FRONTEND_URL=http://your-frontend-address:4173
+SESSION_SECRET=flashcard-secret-key-change-in-production
 ```
 
 ### Frontend Setup
