@@ -84,8 +84,11 @@ onMounted(() => {
     <h2>Admin</h2>
     <div class="creator card">
       <div class="inputs">
-        <input v-model="term" placeholder="Term" />
-        <input v-model="definition" placeholder="Definition" />
+        <input v-model="term" 
+               placeholder="Term" />
+        <input v-model="definition" 
+               placeholder="Definition" 
+               @keydown.enter="createCard" />
       </div>
       <div class="actions">
         <button class="btn btn-primary" :disabled="loading" @click="createCard">Create</button>
