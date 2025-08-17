@@ -3,11 +3,16 @@ import { apiUrl, API_ENDPOINTS } from '../utils/api.js';
 
 const user = ref(null);
 const loading = ref(false);
+const initialized = ref(false);
 
 export function useAuth() {
   const isAuthenticated = computed(() => !!user.value);
+  console.log('isAuthenticated', isAuthenticated.value);
 
+  // Check if user is authenticated
   async function checkAuth() {
+    if (initialized.value || loading.value) return;
+    
     loading.value = true;
     try {
       const response = await fetch(apiUrl(API_ENDPOINTS.CHECK_AUTH), {
@@ -24,9 +29,11 @@ export function useAuth() {
       user.value = null;
     } finally {
       loading.value = false;
+      initialized.value = true;
     }
   }
 
+  // Login user
   async function login(username, password) {
     loading.value = true;
     try {
@@ -52,6 +59,7 @@ export function useAuth() {
     }
   }
 
+  // Signup user
   async function signup(username, password) {
     loading.value = true;
     try {
@@ -77,6 +85,7 @@ export function useAuth() {
     }
   }
 
+  // Logout user
   async function logout() {
     loading.value = true;
     try {
@@ -92,6 +101,7 @@ export function useAuth() {
     }
   }
 
+  // Return auth state and methods
   return {
     user: computed(() => user.value),
     isAuthenticated,

@@ -1,14 +1,10 @@
 <script setup>
-import { onMounted } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from './composables/useAuth.js';
 
-const { user, isAuthenticated, checkAuth, logout } = useAuth();
+const { user, isAuthenticated, logout } = useAuth();
 const router = useRouter();
-
-onMounted(() => {
-  checkAuth();
-});
 
 async function handleLogout() {
   await logout(); // Logout user
