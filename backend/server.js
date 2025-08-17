@@ -17,7 +17,7 @@ app.use(session({
   secret: 'flashcard-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+  cookie: { secure: "auto", httpOnly: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
 }));
 
 // Intialize database
