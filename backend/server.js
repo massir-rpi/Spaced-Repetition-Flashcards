@@ -10,14 +10,22 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200 // Safari compatibility
 }));
 app.use(bodyParser.json());
 app.use(session({
   secret: 'flashcard-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: "auto", httpOnly: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production' || process.env.HTTPS === 'true',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  }
 }));
 
 // Intialize database
