@@ -4,37 +4,99 @@ import bodyParser from 'body-parser';
 import Database from 'better-sqlite3';
 import bcrypt from 'bcrypt';
 import session from 'express-session';
+import crypto from 'crypto';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL || 'https://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200 // Safari compatibility
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie'],
+  optionsSuccessStatus: 200
 }));
 app.use(bodyParser.json());
+
+const sessionSecret = process.env.SESSION_SECRET || 'flashcard-secret-key-change-in-production';
 
 console.log('=== SESSION CONFIG DEBUG ===');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('SESSION_SECRET (first 10 chars):', sessionSecret.substring(0, 10) + '...');
 console.log('============================');
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'flashcard-secret-key-change-in-production',
-  resave: false,
-  saveUninitialized: false,
+  secret: sessionSecret,
+  name: 'connect.sid',
+  resave: true,  // Save session even if unmodified
+  saveUninitialized: true,  // Save new sessions
+  rolling: false, // Don't reset expiry on each request
   cookie: { 
-    secure: false,
-    httpOnly: false,
+    secure: true,  // Temporarily disable for debugging
+    httpOnly: true, // Security best practice
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: false,
+    sameSite: 'none', // Temporarily change for debugging
     path: '/',
     domain: undefined // let browser set domain
   }
 }));
+
+// Debug session middleware behavior
+app.use((req, res, next) => {
+  if (req.path.includes('/api/auth/login')) {
+    const originalEnd = res.end;
+    res.end = function(chunk, encoding) {
+      console.log('=== FINAL RESPONSE DEBUG ===');
+      console.log('Response Set-Cookie header:', res.getHeader('Set-Cookie'));
+      console.log('Session ID at response:', req.sessionID);
+      console.log('Session data at response:', req.session);
+      console.log('=============================');
+      originalEnd.call(this, chunk, encoding);
+    };
+  }
+  next();
+});
+
+// Debug middleware (AFTER session middleware)
+app.use((req, res, next) => {
+  if (req.path.includes('/api/')) {
+    console.log(`\n=== ${req.method} ${req.path} ===`);
+    console.log('Raw cookie header:', req.headers.cookie);
+    console.log('Session ID from middleware:', req.sessionID);
+    console.log('Session isNew:', req.session.isNew);
+    console.log('Session userId:', req.session?.userId);
+    
+    // Try to manually parse the cookie to see what's wrong
+    if (req.headers.cookie) {
+      const cookieValue = req.headers.cookie.split('connect.sid=')[1]?.split(';')[0];
+      if (cookieValue) {
+        console.log('Extracted cookie value:', cookieValue);
+        // Decode the signed cookie value
+        const unsigned = cookieValue.startsWith('s:') ? cookieValue.slice(2) : cookieValue;
+        const sessionIdFromCookie = unsigned.split('.')[0];
+        const signatureFromCookie = unsigned.split('.')[1];
+        console.log('Session ID from cookie:', sessionIdFromCookie);
+        console.log('Signature from cookie:', signatureFromCookie);
+        
+        // Try to verify the signature manually
+        try {
+          const expectedSignature = crypto.createHmac('sha256', sessionSecret)
+            .update(sessionIdFromCookie)
+            .digest('base64')
+            .replace(/=/g, '');
+          console.log('Expected signature:', expectedSignature);
+          console.log('Signature match:', signatureFromCookie === expectedSignature);
+        } catch (err) {
+          console.log('Manual signature verification failed:', err.message);
+        }
+      }
+    }
+    console.log('================================\n');
+  }
+  next();
+});
 
 // Intialize database
 const db = new Database('flashcards.db');
@@ -155,20 +217,48 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    req.session.userId = user.id;
-    req.session.username = user.username;
-    
-    console.log('=== LOGIN SUCCESS DEBUG ===');
-    console.log('Session ID:', req.sessionID);
-    console.log('Session data:', req.session);
-    console.log('Set-Cookie header will be:', res.getHeaders()['set-cookie']);
-    console.log('===========================');
-    
-    res.json({ 
-      user: { 
-        id: user.id, 
-        username: user.username
-      } 
+    // Regenerate session to ensure fresh cookie is sent
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error('Session regenerate error:', err);
+        return res.status(500).json({ error: 'Session regenerate failed' });
+      }
+      
+      // Set user data in the new session
+      req.session.userId = user.id;
+      req.session.username = user.username;
+      
+      console.log('=== LOGIN SESSION REGENERATE ===');
+      console.log('New Session ID:', req.sessionID);
+      console.log('Session data:', req.session);
+      console.log('Session isNew:', req.session.isNew);
+      console.log('================================');
+      
+      // Save the session
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('Session save error:', saveErr);
+          return res.status(500).json({ error: 'Session save failed' });
+        }
+        
+        console.log('=== LOGIN SUCCESS ===');
+        console.log('Session saved with ID:', req.sessionID);
+        
+        // Check if Set-Cookie header will be sent
+        res.on('finish', () => {
+          console.log('=== RESPONSE HEADERS ===');
+          console.log('Set-Cookie:', res.getHeader('Set-Cookie'));
+          console.log('All headers:', res.getHeaders());
+          console.log('========================');
+        });
+        
+        res.json({ 
+          user: { 
+            id: user.id, 
+            username: user.username
+          } 
+        });
+      });
     });
   } catch (err) {
     console.error(err);
@@ -188,13 +278,6 @@ app.post('/api/auth/logout', (req, res) => {
 
 // Get current user
 app.get('/api/auth/me', (req, res) => {
-  console.log('=== AUTH CHECK DEBUG ===');
-  console.log('Headers:', req.headers);
-  console.log('Session ID:', req.sessionID);
-  console.log('Session data:', req.session);
-  console.log('Cookie header:', req.headers.cookie);
-  console.log('========================');
-  
   if (!req.session.userId) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
