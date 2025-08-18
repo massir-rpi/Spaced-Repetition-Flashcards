@@ -18,6 +18,19 @@ app.use(cors({
 }));
 app.use(bodyParser.json());
 
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  if (req.path.includes('/api/')) {
+    console.log(`\n=== REQUEST DEBUG ===`);
+    console.log(`${req.method} ${req.path}`);
+    console.log('Origin:', req.headers.origin);
+    console.log('Cookie header:', req.headers.cookie || 'NO COOKIE HEADER');
+    console.log('Session ID:', req.sessionID);
+    console.log('====================\n');
+  }
+  next();
+});
+
 console.log('=== SESSION CONFIG DEBUG ===');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
@@ -33,7 +46,8 @@ app.use(session({
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: 'none',
-    path: '/'
+    path: '/',
+    domain: undefined // Let browser determine domain
   }
 }));
 
@@ -186,6 +200,8 @@ app.post('/api/auth/login', async (req, res) => {
       console.log('Session data after save:', req.session);
       console.log('User ID saved:', req.session.userId);
       console.log('Username saved:', req.session.username);
+      console.log('Response headers:', res.getHeaders());
+      console.log('Set-Cookie will be:', res.get('Set-Cookie') || 'NO SET-COOKIE HEADER');
       console.log('===========================');
       
       res.json({ 
