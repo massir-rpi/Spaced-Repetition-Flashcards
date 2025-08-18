@@ -27,10 +27,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: { 
-    secure: true,
-    httpOnly: true,
+    secure: false,
+    httpOnly: false,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'none',
+    sameSite: false,
     path: '/',
     domain: undefined // let browser set domain
   }
