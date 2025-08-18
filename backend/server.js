@@ -5,6 +5,7 @@ import Database from 'better-sqlite3';
 import bcrypt from 'bcrypt';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
+import cookieSignature from 'cookie-signature';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -43,8 +44,8 @@ console.log('============================');
 app.use(session({
   secret: process.env.SESSION_SECRET || 'flashcard-secret-key-change-in-production',
   name: 'connect.sid', // Explicitly set session cookie name
-  resave: false,
-  saveUninitialized: false,
+  resave: true, // Force session save on every request
+  saveUninitialized: true, // Save new sessions immediately
   rolling: true,
   cookie: { 
     secure: true,
@@ -190,30 +191,79 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    req.session.userId = user.id;
-    req.session.username = user.username;
-    
-    // Force session save and wait for it
-    req.session.save((err) => {
+    // Regenerate session to ensure clean state
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error('Session regenerate error:', err);
+        return res.status(500).json({ error: 'Session regenerate failed' });
+      }
+
+      req.session.userId = user.id;
+      req.session.username = user.username;
+      
+      console.log('=== AFTER SESSION REGENERATE ===');
+      console.log('New session ID:', req.sessionID);
+      console.log('Setting userId to:', user.id);
+      console.log('Setting username to:', user.username);
+      console.log('Session after regenerate:', req.session);
+      console.log('================================');
+
+      // Force session save and wait for it
+      req.session.save((err) => {
       if (err) {
         console.error('Session save error:', err);
         return res.status(500).json({ error: 'Session save failed' });
       }
       
       console.log('=== LOGIN SUCCESS DEBUG ===');
-      console.log('Session ID:', req.sessionID);
+      console.log('Session ID after save:', req.sessionID);
       console.log('Session data after save:', req.session);
-      console.log('User ID saved:', req.session.userId);
-      console.log('Username saved:', req.session.username);
-      console.log('Response headers:', res.getHeaders());
-      console.log('Set-Cookie will be:', res.get('Set-Cookie') || 'NO SET-COOKIE HEADER');
+      console.log('User ID in session:', req.session.userId);
+      console.log('Username in session:', req.session.username);
+      
+      // Double-check session was saved by reading it back
+      setTimeout(() => {
+        console.log('=== SESSION VERIFY (1s later) ===');
+        console.log('Session ID:', req.sessionID);
+        console.log('Session userId:', req.session.userId);
+        console.log('Session username:', req.session.username);
+        console.log('=================================');
+      }, 1000);
+      
       console.log('===========================');
+      
+      // Force session cookie to be sent by touching the session
+      req.session.touch();
+      
+      // Manually set the session cookie header
+      const cookieName = 'connect.sid';
+      const sessionSecret = process.env.SESSION_SECRET || 'flashcard-secret-key-change-in-production';
+      const signedSessionID = cookieSignature.sign(req.sessionID, sessionSecret);
+      const cookieValue = `s:${signedSessionID}`;
+      
+      const cookieHeader = `${cookieName}=${cookieValue}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${24 * 60 * 60}`;
+      res.setHeader('Set-Cookie', cookieHeader);
+      
+      console.log('=== FORCING COOKIE SEND ===');
+      console.log('Session ID to send:', req.sessionID);
+      console.log('Manual cookie header:', cookieHeader);
+      console.log('Session touched for cookie update');
+      console.log('==============================');
+      
+      // Log response headers being sent
+      res.on('finish', () => {
+        console.log('=== RESPONSE SENT ===');
+        console.log('Set-Cookie header:', res.getHeader('Set-Cookie'));
+        console.log('All response headers:', res.getHeaders());
+        console.log('====================');
+      });
       
       res.json({ 
         user: { 
           id: user.id, 
           username: user.username
         } 
+      });
       });
     });
   } catch (err) {
@@ -235,13 +285,16 @@ app.post('/api/auth/logout', (req, res) => {
 // Get current user
 app.get('/api/auth/me', (req, res) => {
   console.log('=== AUTH CHECK DEBUG ===');
-  console.log('Headers:', req.headers);
   console.log('Session ID:', req.sessionID);
-  console.log('Session data:', req.session);
-  console.log('Cookie header:', req.headers.cookie);
+  console.log('Full session object:', req.session);
+  console.log('Session userId:', req.session.userId);
+  console.log('Session username:', req.session.username);
+  console.log('Session keys:', Object.keys(req.session));
   console.log('========================');
   
   if (!req.session.userId) {
+    console.log('No userId in session - returning 401');
+    console.log('Session is:', req.session);
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
@@ -251,6 +304,7 @@ app.get('/api/auth/me', (req, res) => {
     return res.status(401).json({ error: 'User not found' });
   }
   
+  console.log('Auth successful, returning user:', user);
   res.json({ user });
 });
 
