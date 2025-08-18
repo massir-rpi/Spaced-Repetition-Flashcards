@@ -11,14 +11,15 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const origins = process.env.FRONTEND_URLS ? process.env.FRONTEND_URLS.split(',') : ['http://localhost:5173'];
 
-const corsOptions = cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+app.use(cors({
+  origin: origins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-  exposedHeaders: ['Set-Cookie'],
-  optionsSuccessStatus: 200
-});
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie'],
+  exposedHeaders: ['Set-Cookie', 'Access-Control-Allow-Credentials'],
+  optionsSuccessStatus: 200,
+  preflightContinue: false
+}));
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
@@ -246,11 +247,16 @@ app.post('/api/auth/login', async (req, res) => {
       const cookieValue = `s:${signedSessionID}`;
       
       const cookieHeader = `${cookieName}=${cookieValue}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${24 * 60 * 60}`;
+      
+      // Set CORS headers explicitly before setting cookie
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Expose-Headers', 'Set-Cookie');
       res.setHeader('Set-Cookie', cookieHeader);
       
       console.log('=== FORCING COOKIE SEND ===');
       console.log('Session ID to send:', req.sessionID);
       console.log('Manual cookie header:', cookieHeader);
+      console.log('CORS headers set for cookie');
       console.log('Session touched for cookie update');
       console.log('==============================');
       
