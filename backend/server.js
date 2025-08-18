@@ -12,8 +12,9 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200 // Safari compatibility
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie'],
+  optionsSuccessStatus: 200
 }));
 app.use(bodyParser.json());
 
@@ -26,6 +27,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'flashcard-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
+  rolling: true,
   cookie: { 
     secure: true,
     httpOnly: true,
@@ -121,11 +123,26 @@ app.post('/api/auth/signup', async (req, res) => {
     req.session.userId = info.lastInsertRowid;
     req.session.username = username;
     
-    res.json({ 
-      user: { 
-        id: info.lastInsertRowid, 
-        username: username.trim(), 
-      } 
+    // Force session save and wait for it
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error during signup:', err);
+        return res.status(500).json({ error: 'Session save failed' });
+      }
+      
+      console.log('=== SIGNUP SUCCESS DEBUG ===');
+      console.log('Session ID:', req.sessionID);
+      console.log('Session data after save:', req.session);
+      console.log('User ID saved:', req.session.userId);
+      console.log('Username saved:', req.session.username);
+      console.log('============================');
+      
+      res.json({ 
+        user: { 
+          id: info.lastInsertRowid, 
+          username: username.trim(), 
+        } 
+      });
     });
   } catch (err) {
     if (String(err.message || '').includes('UNIQUE')) {
@@ -157,17 +174,26 @@ app.post('/api/auth/login', async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
     
-    console.log('=== LOGIN SUCCESS DEBUG ===');
-    console.log('Session ID:', req.sessionID);
-    console.log('Session data:', req.session);
-    console.log('Set-Cookie header will be:', res.getHeaders()['set-cookie']);
-    console.log('===========================');
-    
-    res.json({ 
-      user: { 
-        id: user.id, 
-        username: user.username
-      } 
+    // Force session save and wait for it
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({ error: 'Session save failed' });
+      }
+      
+      console.log('=== LOGIN SUCCESS DEBUG ===');
+      console.log('Session ID:', req.sessionID);
+      console.log('Session data after save:', req.session);
+      console.log('User ID saved:', req.session.userId);
+      console.log('Username saved:', req.session.username);
+      console.log('===========================');
+      
+      res.json({ 
+        user: { 
+          id: user.id, 
+          username: user.username
+        } 
+      });
     });
   } catch (err) {
     console.error(err);

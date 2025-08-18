@@ -8,6 +8,7 @@ const initialized = ref(false);
 export function useAuth() {
   const isAuthenticated = computed(() => !!user.value);
   console.log('isAuthenticated', isAuthenticated.value);
+  console.log('user', user.value);
 
   // Check if user is authenticated
   async function checkAuth() {
@@ -21,8 +22,14 @@ export function useAuth() {
       if (response.ok) {
         const data = await response.json();
         user.value = data.user;
+        console.log('=== AUTH CHECK SUCCESS ===');
+        console.log('User:', user.value);
+        console.log('========================');
       } else {
         user.value = null;
+        console.log('=== AUTH CHECK FAILED ===');
+        console.log('Error:', response.statusText);
+        console.log('========================');
       }
     } catch (error) {
       console.error('Auth check failed:', error);
