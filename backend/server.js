@@ -9,15 +9,19 @@ import cookieSignature from 'cookie-signature';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const origins = process.env.FRONTEND_URLS ? process.env.FRONTEND_URLS.split(',') : ['http://localhost:5173'];
 
-app.use(cors({
+const corsOptions = cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   exposedHeaders: ['Set-Cookie'],
   optionsSuccessStatus: 200
-}));
+});
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
