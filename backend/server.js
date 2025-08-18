@@ -9,9 +9,9 @@ import cookieSignature from 'cookie-signature';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const origins = process.env.FRONTEND_URLS ? process.env.FRONTEND_URLS.split(',') : ['http://localhost:5173'];
+const origins = !!process.env.FRONTEND_URLS ? process.env.FRONTEND_URLS.split(',') : ['http://localhost:5173'];
 
-app.use(cors({
+const corsOptions = {
   origin: origins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -19,7 +19,7 @@ app.use(cors({
   exposedHeaders: ['Set-Cookie', 'Access-Control-Allow-Credentials'],
   optionsSuccessStatus: 200,
   preflightContinue: false
-}));
+};
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
@@ -43,7 +43,7 @@ app.use((req, res, next) => {
 
 console.log('=== SESSION CONFIG DEBUG ===');
 console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('FRONTEND_URLS:', process.env.FRONTEND_URLS);
 console.log('============================');
 
 app.use(session({
