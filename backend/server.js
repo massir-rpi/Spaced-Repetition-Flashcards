@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import Database from 'better-sqlite3';
 import bcrypt from 'bcrypt';
 import session from 'express-session';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,6 +18,7 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {
@@ -24,7 +26,9 @@ app.use((req, res, next) => {
     console.log(`\n=== REQUEST DEBUG ===`);
     console.log(`${req.method} ${req.path}`);
     console.log('Origin:', req.headers.origin);
-    console.log('Cookie header:', req.headers.cookie || 'NO COOKIE HEADER');
+    console.log('Raw cookie header:', req.headers.cookie || 'NO COOKIE HEADER');
+    console.log('Parsed cookies:', req.cookies);
+    console.log('Signed cookies:', req.signedCookies);
     console.log('Session ID:', req.sessionID);
     console.log('====================\n');
   }
@@ -38,6 +42,7 @@ console.log('============================');
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'flashcard-secret-key-change-in-production',
+  name: 'connect.sid', // Explicitly set session cookie name
   resave: false,
   saveUninitialized: false,
   rolling: true,
