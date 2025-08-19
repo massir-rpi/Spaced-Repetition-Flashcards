@@ -340,7 +340,7 @@ app.post('/api/review/:id', requireAuth, (req, res) => {
     const newIncorrect = card.incorrectCount + 1;
     if (newIncorrect >= 10) {
       // Mark as hard to remember; never show again
-      db.prepare('UPDATE cards SET isHard = 1, updatedAt = ? WHERE id = ? AND user_id = ?').run(ts, id, req.session.userId);
+      db.prepare('UPDATE cards SET isHard = 1, updatedAt = ?, incorrectCount = ? WHERE id = ? AND user_id = ?').run(ts, newIncorrect, id, req.session.userId);
       const updated = db.prepare('SELECT * FROM cards WHERE id = ? AND user_id = ?').get(id, req.session.userId);
       return res.json({ card: updated });
     }
