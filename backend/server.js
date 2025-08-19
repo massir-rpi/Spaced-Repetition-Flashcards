@@ -9,6 +9,9 @@ import crypto from 'crypto';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy for HTTPS detection (required for platforms like Render, Heroku, etc.)
+app.set('trust proxy', 1);
+
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'https://localhost:5173',
   credentials: true,
@@ -52,6 +55,9 @@ app.use((req, res, next) => {
     const originalEnd = res.end;
     res.end = function(chunk, encoding) {
       console.log(`=== FINAL RESPONSE DEBUG (${req.path}) ===`);
+      console.log('Request secure (req.secure):', req.secure);
+      console.log('Request protocol:', req.protocol);
+      console.log('X-Forwarded-Proto header:', req.headers['x-forwarded-proto']);
       console.log('Response Set-Cookie header:', res.getHeader('Set-Cookie'));
       console.log('Session ID at response:', req.sessionID);
       console.log('Session data at response:', req.session);
