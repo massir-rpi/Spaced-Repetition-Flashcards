@@ -81,6 +81,7 @@ onMounted(() => {
   font-weight: 800;
 }
 .definition {
+  max-width: 720px;
   margin-top: 0.75rem;
   color: #111827;
 }
