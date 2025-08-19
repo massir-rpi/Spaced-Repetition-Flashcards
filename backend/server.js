@@ -24,7 +24,10 @@ const sessionSecret = process.env.SESSION_SECRET || 'flashcard-secret-key-change
 console.log('=== SESSION CONFIG DEBUG ===');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('SESSION_SECRET env var set:', !!process.env.SESSION_SECRET);
 console.log('SESSION_SECRET (first 10 chars):', sessionSecret.substring(0, 10) + '...');
+console.log('Cookie secure setting:', true);
+console.log('Cookie sameSite setting:', 'none');
 console.log('============================');
 
 app.use(session({
@@ -34,10 +37,10 @@ app.use(session({
   saveUninitialized: true,  // Save new sessions
   rolling: false, // Don't reset expiry on each request
   cookie: { 
-    secure: true,  // Temporarily disable for debugging
+    secure: true,  // Security for modern browsers
     httpOnly: true, // Security best practice
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'none', // Temporarily change for debugging
+    sameSite: 'none', // Allow cross-site requests
     path: '/',
     domain: undefined // let browser set domain
   }
@@ -45,14 +48,16 @@ app.use(session({
 
 // Debug session middleware behavior
 app.use((req, res, next) => {
-  if (req.path.includes('/api/auth/login')) {
+  if (req.path.includes('/api/auth/login') || req.path.includes('/api/auth/signup')) {
     const originalEnd = res.end;
     res.end = function(chunk, encoding) {
-      console.log('=== FINAL RESPONSE DEBUG ===');
+      console.log(`=== FINAL RESPONSE DEBUG (${req.path}) ===`);
       console.log('Response Set-Cookie header:', res.getHeader('Set-Cookie'));
       console.log('Session ID at response:', req.sessionID);
       console.log('Session data at response:', req.session);
-      console.log('=============================');
+      console.log('Session isNew at response:', req.session?.isNew);
+      console.log('Response status:', res.statusCode);
+      console.log('=======================================');
       originalEnd.call(this, chunk, encoding);
     };
   }
