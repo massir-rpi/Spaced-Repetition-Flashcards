@@ -7,7 +7,6 @@ const initialized = ref(false);
 
 export function useAuth() {
   const isAuthenticated = computed(() => !!user.value);
-  console.log('isAuthenticated', isAuthenticated.value);
 
   // Check if user is authenticated
   async function checkAuth() {

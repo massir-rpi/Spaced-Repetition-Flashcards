@@ -4,7 +4,7 @@ import bodyParser from 'body-parser';
 import Database from 'better-sqlite3';
 import bcrypt from 'bcrypt';
 import session from 'express-session';
-import crypto from 'crypto';
+
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -24,90 +24,17 @@ app.use(bodyParser.json());
 
 const sessionSecret = process.env.SESSION_SECRET || 'flashcard-secret-key-change-in-production';
 
-console.log('=== SESSION CONFIG DEBUG ===');
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
-console.log('SESSION_SECRET env var set:', !!process.env.SESSION_SECRET);
-console.log('SESSION_SECRET (first 10 chars):', sessionSecret.substring(0, 10) + '...');
-console.log('Cookie secure setting:', true);
-console.log('Cookie sameSite setting:', 'none');
-console.log('============================');
-
 app.use(session({
   secret: sessionSecret,
   name: 'connect.sid',
-  resave: true,  // Save session even if unmodified
-  saveUninitialized: true,  // Save new sessions
-  rolling: false, // Don't reset expiry on each request
   cookie: { 
     secure: true,  // Security for modern browsers
     httpOnly: true, // Security best practice
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: 'none', // Allow cross-site requests
-    path: '/',
     domain: undefined // let browser set domain
   }
 }));
-
-// Debug session middleware behavior
-app.use((req, res, next) => {
-  if (req.path.includes('/api/auth/login') || req.path.includes('/api/auth/signup')) {
-    const originalEnd = res.end;
-    res.end = function(chunk, encoding) {
-      console.log(`=== FINAL RESPONSE DEBUG (${req.path}) ===`);
-      console.log('Request secure (req.secure):', req.secure);
-      console.log('Request protocol:', req.protocol);
-      console.log('X-Forwarded-Proto header:', req.headers['x-forwarded-proto']);
-      console.log('Response Set-Cookie header:', res.getHeader('Set-Cookie'));
-      console.log('Session ID at response:', req.sessionID);
-      console.log('Session data at response:', req.session);
-      console.log('Session isNew at response:', req.session?.isNew);
-      console.log('Response status:', res.statusCode);
-      console.log('=======================================');
-      originalEnd.call(this, chunk, encoding);
-    };
-  }
-  next();
-});
-
-// Debug middleware (AFTER session middleware)
-app.use((req, res, next) => {
-  if (req.path.includes('/api/')) {
-    console.log(`\n=== ${req.method} ${req.path} ===`);
-    console.log('Raw cookie header:', req.headers.cookie);
-    console.log('Session ID from middleware:', req.sessionID);
-    console.log('Session isNew:', req.session.isNew);
-    console.log('Session userId:', req.session?.userId);
-    
-    // Try to manually parse the cookie to see what's wrong
-    if (req.headers.cookie) {
-      const cookieValue = req.headers.cookie.split('connect.sid=')[1]?.split(';')[0];
-      if (cookieValue) {
-        console.log('Extracted cookie value:', cookieValue);
-        // Decode the signed cookie value
-        const unsigned = cookieValue.startsWith('s:') ? cookieValue.slice(2) : cookieValue;
-        const sessionIdFromCookie = unsigned.split('.')[0];
-        const signatureFromCookie = unsigned.split('.')[1];
-        console.log('Session ID from cookie:', sessionIdFromCookie);
-        console.log('Signature from cookie:', signatureFromCookie);
-        
-        // Try to verify the signature manually
-        try {
-          const expectedSignature = crypto.createHmac('sha256', sessionSecret)
-            .update(sessionIdFromCookie)
-            .digest('base64')
-            .replace(/=/g, '');
-          console.log('Expected signature:', expectedSignature);
-          console.log('Signature match:', signatureFromCookie === expectedSignature);
-        } catch (err) {
-          console.log('Manual signature verification failed:', err.message);
-        }
-      }
-    }
-    console.log('================================\n');
-  }
-  next();
-});
 
 // Intialize database
 const db = new Database('flashcards.db');
@@ -239,29 +166,12 @@ app.post('/api/auth/login', async (req, res) => {
       req.session.userId = user.id;
       req.session.username = user.username;
       
-      console.log('=== LOGIN SESSION REGENERATE ===');
-      console.log('New Session ID:', req.sessionID);
-      console.log('Session data:', req.session);
-      console.log('Session isNew:', req.session.isNew);
-      console.log('================================');
-      
       // Save the session
       req.session.save((saveErr) => {
         if (saveErr) {
           console.error('Session save error:', saveErr);
           return res.status(500).json({ error: 'Session save failed' });
         }
-        
-        console.log('=== LOGIN SUCCESS ===');
-        console.log('Session saved with ID:', req.sessionID);
-        
-        // Check if Set-Cookie header will be sent
-        res.on('finish', () => {
-          console.log('=== RESPONSE HEADERS ===');
-          console.log('Set-Cookie:', res.getHeader('Set-Cookie'));
-          console.log('All headers:', res.getHeaders());
-          console.log('========================');
-        });
         
         res.json({ 
           user: { 
