@@ -4,28 +4,28 @@ A modern, full-stack flashcard application for vocabulary learning with spaced r
 
 ## Features
 
-### 🔐 User Authentication
+### User Authentication
 
 - Secure user registration and login
 - Session-based authentication
 - Password hashing with bcrypt
 - User-specific flashcard collections
 
-### 📚 Flashcard Management
+### Flashcard Management
 
 - Create, edit, and delete flashcards
 - Each card contains a term and definition
 - User-specific cards (isolated per user)
 - Admin interface for card management
 
-### 🧠 Spaced Repetition System
+### Spaced Repetition System
 
 - Intelligent review scheduling based on performance
 - 11-bin system for optimal memory retention
 - Cards move between bins based on correct/incorrect answers
 - Automatic scheduling for next review dates
 
-### 🎯 Study Interface
+### Study Interface
 
 - Clean, distraction-free study environment
 - Show/hide definition functionality
